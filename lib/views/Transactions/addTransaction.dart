@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../models/categories/categoryModel.dart';
 import '../../models/transaction/transactionModel.dart';
 import '../../services/categories/categoryService.dart';
@@ -45,9 +46,25 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
   }
 
+  void _selectTransactionDate() async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (pickedDate != null) {
+      String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
+      setState(() {
+        _transactionDateController.text = formattedDate;
+      });
+    }
+  }
+
   void _submitTransaction() async {
     if (_formKey.currentState!.validate()) {
-      final userId = int.tryParse(_userIdController.text);
+      final userId = 1;
       final amount = int.tryParse(_amountController.text);
 
       if (userId == null || amount == null || _selectedCategory == null) {
@@ -76,6 +93,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             _selectedCategory = null;
             _type = 'income';
           });
+
+          Navigator.pop(context);
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -157,8 +176,14 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               ),
               TextFormField(
                 controller: _transactionDateController,
-                decoration: InputDecoration(labelText: 'Transaction Date'),
-                keyboardType: TextInputType.datetime,
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: 'Transaction Date',
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.calendar_today),
+                    onPressed: _selectTransactionDate,
+                  ),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter Transaction Date';
