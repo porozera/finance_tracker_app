@@ -1,4 +1,4 @@
-import 'package:finance_tracker_app/views/home.dart';
+import 'package:finance_tracker_app/views/transaction.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -12,11 +12,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
         useMaterial3: true,
       ),
-      home: const HomePage(), // Use HomePage as the home screen
+      home: const TransactionPage(), // Use HomePage as the home screen
     );
   }
 }
