@@ -1,5 +1,6 @@
 import 'package:finance_tracker_app/views/Budgets/budget.dart';
 import 'package:finance_tracker_app/views/SavingGoals/savingGoals.dart';
+import 'package:finance_tracker_app/views/Transactions/addTransaction.dart';
 import 'package:finance_tracker_app/views/Transactions/transaction.dart';
 import 'package:flutter/material.dart';
 
@@ -44,12 +45,15 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Finance Tracker',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
         useMaterial3: true,
       ),
+      routes: {
+        '/addTransaction': (context) => TransactionFormScreen(),
+      },
       home: Scaffold(
         body: IndexedStack( // Use IndexedStack to display pages
           index: _selectedIndex,

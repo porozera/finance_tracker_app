@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'addTransaction.dart';
+
 class TransactionPage extends StatefulWidget {
   const TransactionPage({Key? key}) : super(key: key);
 
@@ -19,7 +21,10 @@ class _TransactionPageState extends State<TransactionPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Handle adding a new transaction
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) =>  TransactionFormScreen()),
+          );
         },
         child: const Icon(Icons.add),
       ),
