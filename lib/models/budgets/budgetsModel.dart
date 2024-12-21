@@ -1,4 +1,4 @@
-class Account {
+class Budgets {
   final int id;
   final int userId;
   final String firstAmount;
@@ -7,7 +7,7 @@ class Account {
   final String updatedAt;
   final User user;
 
-  Account({
+  Budgets({
     required this.id,
     required this.userId,
     required this.firstAmount,
@@ -18,8 +18,8 @@ class Account {
   });
 
   // Factory method for parsing JSON
-  factory Account.fromJson(Map<String, dynamic> json) {
-    return Account(
+  factory Budgets.fromJson(Map<String, dynamic> json) {
+    return Budgets(
       id: json['id'],
       userId: json['user_id'],
       firstAmount: json['first_amount'],

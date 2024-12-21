@@ -1,10 +1,12 @@
+import 'package:finance_tracker_app/models/budgets/budgetsModel.dart';
+
 import '../../services/budgets/budgetsService.dart';
 
 
 class BudgetController {
   final BudgetService _service = BudgetService();
 
-  Future<List<Map<String, dynamic>>> fetchAllBudgets() async {
+  Future<List<Budgets>> fetchAllBudgets() async {
     try {
       return await _service.getBudgets();
     } catch (e) {

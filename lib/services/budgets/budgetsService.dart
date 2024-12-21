@@ -1,15 +1,17 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../../models/budgets/budgetsModel.dart';
+
 class BudgetService {
   final String baseUrl = 'http://10.0.2.2:8000/api/budgets';
 
-  Future<List<Map<String, dynamic>>> getBudgets() async {
+  Future<List<Budgets>> getBudgets() async {
     try {
       final response = await http.get(Uri.parse(baseUrl));
       if (response.statusCode == 200) {
-        List data = json.decode(response.body);
-        return data.cast<Map<String, dynamic>>();
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => Budgets.fromJson(json)).toList();
       } else {
         throw Exception('Failed to fetch budgets');
       }
@@ -64,13 +66,15 @@ class BudgetService {
   }
 
   Future<void> deleteBudget(int id) async {
-    try {
-      final response = await http.delete(Uri.parse('$baseUrl/$id'));
-      if (response.statusCode != 204) {
-        throw Exception('Failed to delete budget');
-      }
-    } catch (e) {
-      throw Exception('Error: $e');
+    final response = await http.delete(
+      Uri.parse('$baseUrl/$id'),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      return;
+    } else {
+      throw Exception('Failed to delete budget. Status code: ${response.statusCode}');
     }
   }
 }
