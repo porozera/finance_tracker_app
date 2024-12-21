@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../controllers/budgets/budgetsController.dart';
 
-
 class BudgetsAddScreen extends StatefulWidget {
-  const BudgetsAddScreen({super.key});
+  final VoidCallback onBudgetAdded; // Callback function to refresh data
+
+  const BudgetsAddScreen({super.key, required this.onBudgetAdded});
 
   @override
   _BudgetsAddScreenState createState() => _BudgetsAddScreenState();
@@ -23,7 +24,7 @@ class _BudgetsAddScreenState extends State<BudgetsAddScreen> {
       });
 
       final budgetData = {
-        'user_id':1,
+        'user_id': 1,
         'first_amount': _firstAmountController.text,
         'current_amount': _firstAmountController.text, // Assuming it starts the same as firstAmount
       };
@@ -33,6 +34,9 @@ class _BudgetsAddScreenState extends State<BudgetsAddScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Budget created successfully!')),
         );
+
+        widget.onBudgetAdded(); // Trigger the refresh callback
+
         Navigator.pop(context); // Navigate back after successful creation
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(

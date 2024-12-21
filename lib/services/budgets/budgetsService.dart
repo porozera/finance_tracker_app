@@ -53,17 +53,27 @@ class BudgetService {
   Future<void> updateBudget(int id, Map<String, dynamic> budget) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/$id'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('$baseUrl/$id'), // Ensure this is the correct endpoint
+        headers: {
+          'Content-Type': 'application/json',
+          // Include authentication headers if required, e.g., 'Authorization': 'Bearer YOUR_TOKEN'
+        },
         body: json.encode(budget),
       );
-      if (response.statusCode != 200) {
+
+      if (response.statusCode == 200) {
+        print('Budget updated successfully');
+      } else {
+        print('Failed to update budget. Response: ${response.body}');
         throw Exception('Failed to update budget');
       }
     } catch (e) {
-      throw Exception('Error: $e');
+      print('Error: $e');
+      throw Exception('Error updating budget');
     }
   }
+
+
 
   Future<void> deleteBudget(int id) async {
     final response = await http.delete(

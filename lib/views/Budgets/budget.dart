@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../controllers/budgets/budgetsController.dart';
+import 'addBudget.dart';
 import '../../models/budgets/budgetsModel.dart';
 import '../../services/budgets/budgetsService.dart';
-import 'addBudget.dart';
 import 'editBudget.dart';
-
 
 class BudgetPage extends StatefulWidget {
   const BudgetPage({Key? key}) : super(key: key);
@@ -47,7 +46,7 @@ class _BudgetPageState extends State<BudgetPage> {
       print('Deleting budget with ID: $id');
       await _controller.removeBudget(id);
 
-      // Refresh data from server
+      // Refresh data dari server
       final refreshedBudgets = await _controller.fetchAllBudgets();
       setState(() {
         budgets = refreshedBudgets;
@@ -64,15 +63,16 @@ class _BudgetPageState extends State<BudgetPage> {
     }
   }
 
-  void navigateToEdit(int id) {
-    // Navigate to the EditBudgetScreen with the given budget ID
+  void navigateToAddBudget() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditBudgetScreen(budgetId: id),
+        builder: (context) => BudgetsAddScreen(onBudgetAdded: fetchBudgets),
       ),
     );
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -81,28 +81,19 @@ class _BudgetPageState extends State<BudgetPage> {
         title: const Text('Budgets'),
       ),
       body: isLoading
-          ? const Center(
-        child: CircularProgressIndicator(),
-      )
+          ? const Center(child: CircularProgressIndicator())
           : budgets.isEmpty
-          ? const Center(
-        child: Text('No Budgets Available'),
-      )
+          ? const Center(child: Text('No Budgets Available'))
           : ListView.builder(
         itemCount: budgets.length,
         itemBuilder: (context, index) {
           final budget = budgets[index];
           return Card(
-            margin: const EdgeInsets.symmetric(
-              vertical: 8.0,
-              horizontal: 16.0,
-            ),
+            margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
             child: ListTile(
               title: Text(
                 'Budget by ${budget.user.name}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,19 +103,30 @@ class _BudgetPageState extends State<BudgetPage> {
                 ],
               ),
               trailing: Wrap(
-                spacing: 8.0, // Space between buttons
+                spacing: 8.0,
                 children: [
                   IconButton(
                     icon: const Icon(Icons.edit, color: Colors.blue),
-                    onPressed: () {
-                      // Navigate to the EditBudgetScreen
-                      navigateToEdit(budget.id);
+                    onPressed: () async {
+                      // Navigate to the EditBudgetScreen and wait for a result
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditBudgetScreen(
+                            budgetId: budget.id, // Pass the budget id
+                            budget: budget,      // Pass the whole budget object
+                          ),
+                        ),
+                      );
+                      if (result != null && result == true) {
+                        setState(() {
+                        });
+                      }
                     },
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () {
-                      // Delete budget with the given ID
                       _deleteBudget(budget.id);
                     },
                   ),
@@ -135,15 +137,8 @@ class _BudgetPageState extends State<BudgetPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to the TransactionFormScreen
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => BudgetsAddScreen()),
-          );
-        },
+        onPressed: navigateToAddBudget,
         child: const Icon(Icons.add),
-        tooltip: 'Add Budget',
       ),
     );
   }
