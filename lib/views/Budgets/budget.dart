@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'addBudget.dart';
+
 class BudgetPage extends StatefulWidget {
   const BudgetPage({Key? key}) : super(key: key);
 
@@ -19,7 +21,10 @@ class _BudgetPageState extends State<BudgetPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Handle adding a new budget
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) =>  BudgetsAddScreen()),
+          );
         },
         child: const Icon(Icons.add),
       ),
