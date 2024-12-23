@@ -12,7 +12,13 @@ class _SavingGoalsPageState extends State<SavingGoalsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Saving Goals'),
+        title: const Text(
+          'Saving Goals',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true, // Center the title
       ),
       body: const Center(
         child: Text('Saving Goals Page Content'),

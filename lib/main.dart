@@ -52,7 +52,7 @@ class _MyAppState extends State<MyApp> {
         useMaterial3: true,
       ),
       routes: {
-        '/addTransaction': (context) => TransactionFormScreen(),
+        '/addTransaction': (context) => AddTransactionPage(),
       },
       home: Scaffold(
         body: IndexedStack( // Use IndexedStack to display pages

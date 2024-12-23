@@ -4,7 +4,7 @@ import '../../models/categories/categoryModel.dart';
 
 
 class CategoryService {
-  final String baseUrl = 'https://finance-tracker-backend-zi0p.onrender.com/api/categories';
+  final String baseUrl = 'http://10.0.2.2:8000/api/categories';
 
   Future<List<CategoryModel>> fetchCategories() async {
     try {

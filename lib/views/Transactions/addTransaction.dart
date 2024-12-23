@@ -1,106 +1,144 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../models/budgets/budgetsModel.dart';
 import '../../models/categories/categoryModel.dart';
-import '../../models/transaction/transactionModel.dart';
+import '../../models/savingGoals/savingGoalModel.dart';
+import '../../services/budgets/budgetsService.dart';
 import '../../services/categories/categoryService.dart';
+import '../../services/savingGoals/savingGoalsService.dart';
 import '../../services/transaction/transactionService.dart';
+import '../../models/transaction/transactionModel.dart';
 
-class TransactionFormScreen extends StatefulWidget {
+class AddTransactionPage extends StatefulWidget {
+  const AddTransactionPage({Key? key}) : super(key: key);
+
   @override
-  _TransactionFormScreenState createState() => _TransactionFormScreenState();
+  State<AddTransactionPage> createState() => _AddTransactionPageState();
 }
 
-class _TransactionFormScreenState extends State<TransactionFormScreen> {
+class _AddTransactionPageState extends State<AddTransactionPage> {
   final _formKey = GlobalKey<FormState>();
-  final _userIdController = TextEditingController();
-  final _amountController = TextEditingController();
-  String _type = 'income';
-  final _transactionDateController = TextEditingController();
-  int? _selectedCategory;
+  final _transactionService = TransactionService();
 
-  final TransactionService _transactionService = TransactionService();
-  final CategoryService _categoryService = CategoryService();
+  // Controllers for form fields
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _typeController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final List<String> _types = ['income', 'expense'];
+
+
+  bool _isLoading = false;
   List<CategoryModel> _categories = [];
-  bool _isLoading = true;
+  List<Budgets> _budgets = [];
+  List<GoalModel> _goals = [];
+  int? _selectedCategoryId;
+  int? _selectedBudgetId;
+  int? _selectedGoalId;
+  String? _selectedType;
+  DateTime? _selectedDate;
 
   @override
   void initState() {
     super.initState();
     _fetchCategories();
+    _fetchbBudgets();
+    _fetchbGoals(); // Fetch goals on init as well
   }
 
   Future<void> _fetchCategories() async {
     try {
-      final categories = await _categoryService.fetchCategories();
-      setState(() {
-        _categories = categories;
-        _isLoading = false;
-      });
+      setState(() => _isLoading = true);
+
+      final fetchedCategories = await CategoryService().fetchCategories();
+      setState(() => _categories = fetchedCategories);
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch categories: $e')),
+        SnackBar(content: Text("Error fetching categories: $e")),
       );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
-  void _selectTransactionDate() async {
-    DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
+  Future<void> _fetchbBudgets() async {
+    try {
+      setState(() => _isLoading = true);
 
-    if (pickedDate != null) {
-      String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
+      final fetchedBudgets = await BudgetService().getBudgets();
+      setState(() => _budgets = fetchedBudgets);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error fetching budgets: $e")),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchbGoals() async {
+    try {
+      setState(() => _isLoading = true);
+
+      final fetchedGoals = await GoalService().fetchGoals();
+      setState(() => _goals = fetchedGoals);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error fetching goals: $e")),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _selectedDate) {
       setState(() {
-        _transactionDateController.text = formattedDate;
+        _selectedDate = picked;
+        _dateController.text = DateFormat('yyyy-MM-dd').format(picked);
       });
     }
   }
 
-  void _submitTransaction() async {
-    if (_formKey.currentState!.validate()) {
-      final userId = 1;
-      final amount = int.tryParse(_amountController.text);
 
-      if (userId == null || amount == null || _selectedCategory == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please enter valid numbers and select a category')),
-        );
-        return;
-      }
+  void _createTransaction() async {
+    if (_formKey.currentState!.validate() && _selectedCategoryId != null) {
+      setState(() => _isLoading = true);
 
-      final transaction = TransactionModel(
-        userId: userId,
-        categoryId: _selectedCategory!, // Use the selected category ID
-        amount: amount,
-        type: _type,
-        transactionDate: _transactionDateController.text,
-      );
+      Map<String, dynamic> transactionData = {
+        "user_id": 1,
+        "title": _titleController.text,
+        "amount": double.parse(_amountController.text),
+        "category_id": _selectedCategoryId,
+        "saving_goals": _selectedGoalId,
+        "budget_id": _selectedBudgetId,
+        "type": _selectedType,
+        "transaction_date": _selectedDate != null ? DateFormat('yyyy-MM-dd').format(_selectedDate!) : null,
+      };
 
       try {
-        final success = await _transactionService.createTransaction(transaction);
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Transaction added successfully!')),
-          );
-          _formKey.currentState!.reset();
-          setState(() {
-            _selectedCategory = null;
-            _type = 'income';
-          });
-
-          Navigator.pop(context);
-        }
+        await _transactionService.createTransaction(transactionData);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Transaction added successfully!")),
+        );
+        Navigator.pop(context); // Navigate back to previous screen
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add transaction: $e')),
+          SnackBar(content: Text("Error: $e")),
         );
+      } finally {
+        setState(() => _isLoading = false);
       }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a category")),
+      );
     }
   }
 
@@ -108,93 +146,133 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Transaction'),
+        title: const Text("Add Transaction"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: _isLoading
-            ? Center(child: CircularProgressIndicator())
-            : Form(
+        child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
               TextFormField(
-                controller: _userIdController,
-                decoration: InputDecoration(labelText: 'User ID'),
-                keyboardType: TextInputType.number,
+                controller: _titleController,
+                decoration: const InputDecoration(labelText: "Title"),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter User ID';
+                    return "Please enter a title";
                   }
                   return null;
                 },
               ),
-              DropdownButtonFormField<int>(
-                value: _selectedCategory,
-                items: _categories
-                    .map((category) => DropdownMenuItem<int>(
-                  value: category.id,
-                  child: Text(category.name),
-                ))
-                    .toList(),
+              const SizedBox(height: 16.0),
+              DropdownButtonFormField<int?>(
+                decoration: const InputDecoration(labelText: "Goals"),
+                value: _selectedGoalId,
+                items: _goals.map((goal) {
+                  return DropdownMenuItem<int>(
+                    value: goal.id,
+                    child: Text(goal.goalName),
+                  );
+                }).toList(),
                 onChanged: (value) {
-                  setState(() {
-                    _selectedCategory = value;
-                  });
+                  setState(() => _selectedGoalId = value);
                 },
-                decoration: InputDecoration(labelText: 'Category'),
+                validator: (value) {
+                  // if (value == null) {
+                  //   return "Please select a goal";
+                  // }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16.0),
+              DropdownButtonFormField<int>(
+                decoration: const InputDecoration(labelText: "Budgets"),
+                value: _selectedBudgetId,
+                items: _budgets.map((budget) {
+                  return DropdownMenuItem<int>(
+                    value: budget.id,
+                    child: Text(budget.currentAmount),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() => _selectedBudgetId = value);
+                },
                 validator: (value) {
                   if (value == null) {
-                    return 'Please select a category';
+                    return "Please select a budget";
                   }
                   return null;
                 },
               ),
+              const SizedBox(height: 16.0),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(labelText: "Type"),
+                value: _selectedType, // Use the selected type variable
+                items: _types.map((type) {
+                  return DropdownMenuItem<String>(
+                    value: type,
+                    child: Text(type),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() => _selectedType = value); // Update the selected type
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return "Please select a type";
+                  }
+                  return null;
+                },
+                hint: const Text('Select a type'), // Add a hint
+              ),
+              const SizedBox(height: 16.0),
               TextFormField(
                 controller: _amountController,
-                decoration: InputDecoration(labelText: 'Amount'),
+                decoration: const InputDecoration(labelText: "Amount"),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter Amount';
+                    return "Please enter an amount";
+                  }
+                  if (double.tryParse(value) == null) {
+                    return "Please enter a valid number";
                   }
                   return null;
                 },
               ),
-              DropdownButtonFormField<String>(
-                value: _type,
-                items: [
-                  DropdownMenuItem(value: 'income', child: Text('Income')),
-                  DropdownMenuItem(value: 'expense', child: Text('Expense')),
-                ],
+              const SizedBox(height: 16.0),
+              DropdownButtonFormField<int>( // Category dropdown fix
+                decoration: const InputDecoration(labelText: "Category"),
+                value: _selectedCategoryId,
+                items: _categories.map((category) {
+                  return DropdownMenuItem<int>(
+                    value: category.id,
+                    child: Text(category.name),
+                  );
+                }).toList(),
                 onChanged: (value) {
-                  setState(() {
-                    _type = value!;
-                  });
+                  setState(() => _selectedCategoryId = value);
                 },
-                decoration: InputDecoration(labelText: 'Type'),
-              ),
-              TextFormField(
-                controller: _transactionDateController,
-                readOnly: true,
-                decoration: InputDecoration(
-                  labelText: 'Transaction Date',
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.calendar_today),
-                    onPressed: _selectTransactionDate,
-                  ),
-                ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter Transaction Date';
+                  if (value == null) {
+                    return "Please select a category";
                   }
                   return null;
                 },
               ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _submitTransaction,
-                child: Text('Submit'),
+              const SizedBox(height: 16.0),
+              TextFormField(
+                controller: _dateController,
+                decoration: const InputDecoration(labelText: "Date"),
+                readOnly: true, // Prevent manual editing
+                onTap: () => _selectDate(context), // Trigger the date picker
+              ),
+              const SizedBox(height: 24.0),
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                onPressed: _createTransaction,
+                child: const Text("Add Transaction"),
               ),
             ],
           ),
