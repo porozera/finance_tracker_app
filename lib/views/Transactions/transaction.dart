@@ -23,7 +23,7 @@ class _TransactionPageState extends State<TransactionPage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) =>  TransactionFormScreen()),
+            MaterialPageRoute(builder: (context) =>  AddTransactionPage()),
           );
         },
         child: const Icon(Icons.add),
