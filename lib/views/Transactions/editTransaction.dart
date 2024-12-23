@@ -1,32 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../models/budgets/budgetsModel.dart';
 import '../../models/categories/categoryModel.dart';
 import '../../models/savingGoals/savingGoalModel.dart';
+import '../../models/transaction/transactionModel.dart';
 import '../../services/budgets/budgetsService.dart';
 import '../../services/categories/categoryService.dart';
 import '../../services/savingGoals/savingGoalsService.dart';
 import '../../services/transaction/transactionService.dart';
-import '../../models/transaction/transactionModel.dart';
 
-class AddTransactionPage extends StatefulWidget {
-  const AddTransactionPage({Key? key}) : super(key: key);
+class EditTransactionPage extends StatefulWidget {
+  final TransactionModel transaction;
+  final int transactionId;
+
+  const EditTransactionPage({
+    super.key,
+    required this.transactionId,
+    required this.transaction,
+  });
 
   @override
-  State<AddTransactionPage> createState() => _AddTransactionPageState();
+  State<EditTransactionPage> createState() => _EditTransactionPageState();
 }
 
-class _AddTransactionPageState extends State<AddTransactionPage> {
+class _EditTransactionPageState extends State<EditTransactionPage> {
   final _formKey = GlobalKey<FormState>();
   final _transactionService = TransactionService();
 
   // Controllers for form fields
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _typeController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final List<String> _types = ['income', 'expense'];
-
 
   bool _isLoading = false;
   List<CategoryModel> _categories = [];
@@ -37,14 +45,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   int? _selectedGoalId;
   String? _selectedType;
   DateTime? _selectedDate;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchCategories();
-    _fetchbBudgets();
-    _fetchbGoals(); // Fetch goals on init as well
-  }
 
   Future<void> _fetchCategories() async {
     try {
@@ -106,47 +106,81 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     }
   }
 
-
-  void _createTransaction() async {
-    if (_formKey.currentState!.validate() && _selectedCategoryId != null) {
+  Future<void> _updateTransaction() async {
+    if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      Map<String, dynamic> transactionData = {
-        "user_id": 1,
-        "title": _titleController.text,
-        "amount": double.parse(_amountController.text),
-        "category_id": _selectedCategoryId,
-        "saving_goals": _selectedGoalId,
-        "budget_id": _selectedBudgetId,
-        "type": _selectedType,
-        "transaction_date": _selectedDate != null ? DateFormat('yyyy-MM-dd').format(_selectedDate!) : null,
-      };
-
       try {
-        await _transactionService.createTransaction(transactionData);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Transaction added successfully!")),
+        final updatedTransactionData = {
+          'user_id':1,
+          'title': _titleController.text,
+          'amount': double.parse(_amountController.text),
+          'type': _selectedType,
+          'transaction_date': _selectedDate != null
+              ? DateFormat('yyyy-MM-dd').format(_selectedDate!)
+              : null,
+          'category_id': _selectedCategoryId,
+          'budget_id': _selectedBudgetId,
+          'saving_goals': _selectedGoalId,
+        };
+
+        await _transactionService.updateTransaction(
+          widget.transactionId, // Pass the transaction ID
+          updatedTransactionData,
         );
-        Navigator.pop(context); // Navigate back to previous screen
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transaction updated successfully!')),
+        );
+
+        Navigator.pop(context); // Navigate back to the previous screen
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
+          SnackBar(content: Text('Error updating transaction: $e')),
         );
       } finally {
         setState(() => _isLoading = false);
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a category")),
-      );
     }
   }
 
   @override
+  void initState() {
+    super.initState();
+    _titleController.text = widget.transaction.title.toString();
+    _amountController.text = widget.transaction.amount.toString();
+    _typeController.text = widget.transaction.type.toString();
+    _dateController.text = widget.transaction.transactionDate.toString();
+    _selectedCategoryId = widget.transaction.categoryId; // Set initial category ID
+    _selectedBudgetId = widget.transaction.budgetId; // Set initial budget ID
+    _selectedGoalId = widget.transaction.savingGoals; // Set initial goal ID
+    _selectedType = widget.transaction.type; // Set initial type
+    _selectedDate = widget.transaction.transactionDate; // Set initial date
+
+    _fetchCategories().then((_) {
+      // Set initial category ID after fetching categories
+      _selectedCategoryId = widget.transaction.categoryId;
+    });
+
+    _fetchbBudgets().then((_) {
+      // Set initial budget ID after fetching budgets
+      _selectedBudgetId = widget.transaction.budgetId;
+    });
+
+    _fetchbGoals().then((_) {
+      // Set initial goal ID after fetching goals
+      _selectedGoalId = widget.transaction.savingGoals;
+    });
+
+    _updateTransaction();// Fetch goals on init as well
+  }
+
+  @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Add Transaction"),
+        title: const Text("Edit Transaction"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -165,45 +199,45 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 },
               ),
               const SizedBox(height: 16.0),
-              DropdownButtonFormField<int?>(
-                decoration: const InputDecoration(labelText: "Goals"),
-                value: _selectedGoalId,
-                items: _goals.map((goal) {
-                  return DropdownMenuItem<int>(
-                    value: goal.id,
-                    child: Text(goal.goalName),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => _selectedGoalId = value);
-                },
-                validator: (value) {
-                  // if (value == null) {
-                  //   return "Please select a goal";
-                  // }
-                  return null;
-                },
-              ),
+            DropdownButtonFormField<int?>(
+              decoration: const InputDecoration(labelText: "Goals"),
+              value: _selectedGoalId,
+              items: _goals.map((goal) {
+                return DropdownMenuItem<int?>(
+                  value: goal.id,
+                  child: Text(goal.goalName),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() => _selectedGoalId = value);
+              },
+              // validator: (value) {
+              //   if (value == null) {
+              //     return "Please select a goal";
+              //   }
+              //   return null;
+              // },
+            ),
               const SizedBox(height: 16.0),
-              DropdownButtonFormField<int>(
-                decoration: const InputDecoration(labelText: "Budgets"),
-                value: _selectedBudgetId,
-                items: _budgets.map((budget) {
-                  return DropdownMenuItem<int>(
-                    value: budget.id,
-                    child: Text(budget.currentAmount),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => _selectedBudgetId = value);
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return "Please select a budget";
-                  }
-                  return null;
-                },
-              ),
+            DropdownButtonFormField<int>(
+              decoration: const InputDecoration(labelText: "Budgets"),
+              value: _selectedBudgetId,
+              items: _budgets.map((budget) {
+                return DropdownMenuItem<int>(
+                  value: budget.id,
+                  child: Text(budget.currentAmount.toString()), // Display currentAmount as string
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() => _selectedBudgetId = value);
+              },
+              validator: (value) {
+                if (value == null) {
+                  return "Please select a budget";
+                }
+                return null;
+              },
+            ),
               const SizedBox(height: 16.0),
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: "Type"),
@@ -241,25 +275,25 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 },
               ),
               const SizedBox(height: 16.0),
-              DropdownButtonFormField<int>( // Category dropdown fix
-                decoration: const InputDecoration(labelText: "Category"),
-                value: _selectedCategoryId,
-                items: _categories.map((category) {
-                  return DropdownMenuItem<int>(
-                    value: category.id,
-                    child: Text(category.name),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => _selectedCategoryId = value);
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return "Please select a category";
-                  }
-                  return null;
-                },
-              ),
+            DropdownButtonFormField<int>(
+              decoration: const InputDecoration(labelText: "Category"),
+              value: _selectedCategoryId,
+              items: _categories.map((category) {
+                return DropdownMenuItem<int>(
+                  value: category.id,
+                  child: Text(category.name),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() => _selectedCategoryId = value);
+              },
+              validator: (value) {
+                if (value == null) {
+                  return "Please select a category";
+                }
+                return null;
+              },
+            ),
               const SizedBox(height: 16.0),
               TextFormField(
                 controller: _dateController,
@@ -271,8 +305,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
-                onPressed: _createTransaction,
-                child: const Text("Add Transaction"),
+                onPressed: _updateTransaction,
+                child: const Text("Update Transaction"),
               ),
             ],
           ),
