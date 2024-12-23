@@ -1,3 +1,4 @@
+import 'package:finance_tracker_app/controllers/transaction/transactionController.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -27,6 +28,7 @@ class EditTransactionPage extends StatefulWidget {
 class _EditTransactionPageState extends State<EditTransactionPage> {
   final _formKey = GlobalKey<FormState>();
   final _transactionService = TransactionService();
+  final TransactionController _controller = TransactionController();
 
   // Controllers for form fields
   final TextEditingController _titleController = TextEditingController();
@@ -141,6 +143,28 @@ class _EditTransactionPageState extends State<EditTransactionPage> {
       } finally {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<bool> _deleteTransaction(int id) async { // Change return type to Future<bool>
+    try {
+      print('Deleting transaction with ID: $id');
+      await _controller.removeTransaction(id);
+
+      Navigator.pop(context, true); // Pass true as the result
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Transaction deleted successfully')),
+      );
+
+      return true; // Return true after successful deletion
+    } catch (e) {
+      print('Error deleting transaction: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to delete transaction')),
+      );
+
+      return false; // Return false if there's an error
     }
   }
 
@@ -306,7 +330,20 @@ class _EditTransactionPageState extends State<EditTransactionPage> {
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                 onPressed: _updateTransaction,
-                child: const Text("Update Transaction"),
+                child: const Text("Update"),
+              ),
+              const SizedBox(height: 24.0),
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all(Colors.red),
+                ),
+                onPressed: () {
+                  _deleteTransaction(widget.transactionId);
+                },
+                child: const Text("Delete",
+                style: TextStyle(color: Colors.white),),
               ),
             ],
           ),

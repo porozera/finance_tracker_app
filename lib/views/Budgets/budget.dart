@@ -78,7 +78,13 @@ class _BudgetPageState extends State<BudgetPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Budgets'),
+        title: const Text(
+          'Budget',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true, // Center the title
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

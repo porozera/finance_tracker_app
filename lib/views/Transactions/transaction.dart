@@ -46,7 +46,13 @@ class _TransactionPageState extends State<TransactionPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transactions'),
+        title: const Text(
+          'Transactions',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true, // Center the title
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator()) // Show loading indicator
@@ -55,13 +61,18 @@ class _TransactionPageState extends State<TransactionPage> {
         itemBuilder: (context, index) {
           final transaction = transactions[index];
           return InkWell( // Wrap ListTile in InkWell
-            onTap: () {
+            onTap: () async {
+              final result = await
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => EditTransactionPage(transactionId:transaction.id,transaction: transaction), // Pass transaction data
+                    builder: (context) => EditTransactionPage(transactionId: transaction.id, transaction: transaction), // Pass transaction data
                 ),
               );
+
+              if (result == true) { // Check if the result is true
+                fetchTransactions(); // Refresh the transaction list
+              }
             },
             child: Card(
               margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
